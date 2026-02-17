@@ -62,6 +62,13 @@ export function PhotoGrid() {
               </span>
             )}
 
+            {/* Featured badge */}
+            {photo.featured && (
+              <span className="absolute top-1 left-1 bg-yellow-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                ★
+              </span>
+            )}
+
             {/* Filename */}
             <div className="absolute bottom-0 inset-x-0 bg-black/60 px-2 py-1">
               <p className="text-[11px] text-gray-300 truncate">{photo.name}</p>

@@ -5,6 +5,7 @@ export interface Photo {
   thumbnail_url: string | null
   full_image_url: string | null
   status: 'pending' | 'keep' | 'delete' | 'uploaded'
+  featured: boolean
   blur_score: number | null
   duplicate_group_id: string | null
   composition_score: number | null
@@ -66,6 +67,23 @@ export const api = {
     return request<{ deleted: number; errors: unknown[] }>(
       `/photos/batch/delete-marked?folder_path=${encodeURIComponent(folderPath)}`,
       { method: 'DELETE' },
+    )
+  },
+
+  toggleFeatured(photoId: string, featured: boolean) {
+    return request<Photo>(`/photos/${photoId}/featured`, {
+      method: 'PATCH',
+      body: JSON.stringify({ featured }),
+    })
+  },
+
+  copyFeatured(folderPath: string) {
+    return request<{ copied: number; folder: string; errors: unknown[] }>(
+      '/photos/batch/copy-featured',
+      {
+        method: 'POST',
+        body: JSON.stringify({ folder_path: folderPath }),
+      },
     )
   },
 

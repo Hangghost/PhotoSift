@@ -23,6 +23,8 @@ interface PhotoStore {
   selectPrevRow: (cols: number) => void
   markStatus: (status: Photo['status']) => void
   markSelectedStatus: (status: Photo['status']) => void
+  toggleFeatured: () => void
+  copyFeatured: () => Promise<void>
   deleteMarked: () => Promise<void>
   openViewer: () => void
   closeViewer: () => void
@@ -109,6 +111,31 @@ export const usePhotoStore = create<PhotoStore>((set, get) => ({
 
   markSelectedStatus: (status) => {
     get().markStatus(status)
+  },
+
+  toggleFeatured: () => {
+    const { photos, selectedIndex } = get()
+    const photo = photos[selectedIndex]
+    if (!photo) return
+    api.toggleFeatured(photo.id, !photo.featured).then((updated) => {
+      set((state) => ({
+        photos: state.photos.map((p) => (p.id === updated.id ? updated : p)),
+      }))
+    })
+  },
+
+  copyFeatured: async () => {
+    const { session, refreshPhotos } = get()
+    if (!session?.folder_path) return
+    set({ loading: true })
+    try {
+      await api.copyFeatured(session.folder_path)
+      await refreshPhotos()
+    } catch (e) {
+      set({ error: (e as Error).message })
+    } finally {
+      set({ loading: false })
+    }
   },
 
   deleteMarked: async () => {

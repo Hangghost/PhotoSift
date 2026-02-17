@@ -18,6 +18,7 @@ class PhotoOut(BaseModel):
     thumbnail_url: str | None = None
     full_image_url: str | None = None
     status: PhotoStatus = PhotoStatus.pending
+    featured: bool = False
     blur_score: float | None = None
     duplicate_group_id: str | None = None
     composition_score: float | None = None
@@ -27,6 +28,10 @@ class PhotoOut(BaseModel):
 
 class PhotoStatusUpdate(BaseModel):
     status: PhotoStatus
+
+
+class PhotoFeaturedUpdate(BaseModel):
+    featured: bool
 
 
 class BatchStatusUpdate(BaseModel):

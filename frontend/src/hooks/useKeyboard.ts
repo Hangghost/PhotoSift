@@ -10,6 +10,7 @@ export function useKeyboard() {
     selectNextRow,
     selectPrevRow,
     markSelectedStatus,
+    toggleFeatured,
     toggleViewer,
     closeViewer,
     deleteMarked,
@@ -67,6 +68,10 @@ export function useKeyboard() {
         case 'U':
           markSelectedStatus('pending')
           break
+        case 'f':
+        case 'F':
+          toggleFeatured()
+          break
       }
     }
 
@@ -78,6 +83,7 @@ export function useKeyboard() {
     selectNextRow,
     selectPrevRow,
     markSelectedStatus,
+    toggleFeatured,
     toggleViewer,
     closeViewer,
     deleteMarked,

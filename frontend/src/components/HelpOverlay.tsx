@@ -11,6 +11,7 @@ const shortcuts = [
   { key: 'D', desc: 'Mark for deletion' },
   { key: 'K', desc: 'Mark as keep' },
   { key: 'U', desc: 'Undo mark (set pending)' },
+  { key: 'F', desc: 'Toggle featured (★)' },
   { key: 'Shift+D', desc: 'Delete all marked photos' },
   { key: '?', desc: 'Toggle this help' },
 ]

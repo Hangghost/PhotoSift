@@ -10,6 +10,7 @@ export function Toolbar() {
     session,
     photos,
     deleteMarked,
+    copyFeatured,
   } = usePhotoStore()
 
   const [inputPath, setInputPath] = useState(folderPath)
@@ -19,6 +20,7 @@ export function Toolbar() {
     pending: photos.filter((p) => p.status === 'pending').length,
     keep: photos.filter((p) => p.status === 'keep').length,
     delete: photos.filter((p) => p.status === 'delete').length,
+    featured: photos.filter((p) => p.featured).length,
   }
 
   const handleLoad = () => {
@@ -48,6 +50,16 @@ export function Toolbar() {
           {loading ? 'Loading...' : 'Load'}
         </button>
 
+        {stats.featured > 0 && (
+          <button
+            onClick={copyFeatured}
+            disabled={loading}
+            className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white px-4 py-1.5 rounded text-sm font-medium"
+          >
+            Copy Featured ({stats.featured})
+          </button>
+        )}
+
         {stats.delete > 0 && (
           <button
             onClick={deleteMarked}
@@ -65,6 +77,7 @@ export function Toolbar() {
           <span className="text-yellow-400">Pending: {stats.pending}</span>
           <span className="text-green-400">Keep: {stats.keep}</span>
           <span className="text-red-400">Delete: {stats.delete}</span>
+          <span className="text-yellow-300">Featured: {stats.featured}</span>
         </div>
       )}
     </div>

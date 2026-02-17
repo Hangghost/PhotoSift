@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS photos (
     blur_score REAL,
     duplicate_group_id TEXT,
     composition_score REAL,
+    featured INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -45,10 +46,18 @@ def get_db_path() -> Path:
     return settings.database_path
 
 
+def _migrate_featured(conn) -> None:
+    """Add featured column if it doesn't exist (migration for existing DBs)."""
+    columns = [row[1] for row in conn.execute("PRAGMA table_info(photos)").fetchall()]
+    if "featured" not in columns:
+        conn.execute("ALTER TABLE photos ADD COLUMN featured INTEGER DEFAULT 0")
+
+
 def init_db() -> None:
     settings.ensure_dirs()
     with get_connection() as conn:
         conn.executescript(SCHEMA)
+        _migrate_featured(conn)
 
 
 @contextmanager

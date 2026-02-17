@@ -1,4 +1,5 @@
 import hashlib
+import shutil
 import uuid
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from app.database import get_connection
 from app.models.schemas import (
     BatchStatusUpdate,
     LoadFolderRequest,
+    PhotoFeaturedUpdate,
     PhotoOut,
     PhotoStatusUpdate,
     SessionOut,
@@ -21,6 +23,23 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp", ".bmp", 
 
 def _photo_id(folder: str, filename: str) -> str:
     return hashlib.sha256(f"{folder}/{filename}".encode()).hexdigest()[:16]
+
+
+def _row_to_photo(r) -> PhotoOut:
+    return PhotoOut(
+        id=r["id"],
+        name=r["name"],
+        folder_path=r["folder_path"],
+        thumbnail_url=f"/api/photos/{r['id']}/thumbnail",
+        full_image_url=f"/api/photos/{r['id']}/image",
+        status=r["status"],
+        featured=bool(r["featured"]),
+        blur_score=r["blur_score"],
+        duplicate_group_id=r["duplicate_group_id"],
+        composition_score=r["composition_score"],
+        created_at=r["created_at"],
+        updated_at=r["updated_at"],
+    )
 
 
 @router.post("/load-folder", response_model=SessionOut)
@@ -90,22 +109,7 @@ async def list_photos(folder_path: str | None = None, status: str | None = None)
     with get_connection() as conn:
         rows = conn.execute(query, params).fetchall()
 
-    return [
-        PhotoOut(
-            id=r["id"],
-            name=r["name"],
-            folder_path=r["folder_path"],
-            thumbnail_url=f"/api/photos/{r['id']}/thumbnail",
-            full_image_url=f"/api/photos/{r['id']}/image",
-            status=r["status"],
-            blur_score=r["blur_score"],
-            duplicate_group_id=r["duplicate_group_id"],
-            composition_score=r["composition_score"],
-            created_at=r["created_at"],
-            updated_at=r["updated_at"],
-        )
-        for r in rows
-    ]
+    return [_row_to_photo(r) for r in rows]
 
 
 @router.get("/{photo_id}/image")
@@ -145,19 +149,23 @@ async def update_status(photo_id: str, body: PhotoStatusUpdate):
     if not row:
         raise HTTPException(status_code=404, detail="Photo not found")
 
-    return PhotoOut(
-        id=row["id"],
-        name=row["name"],
-        folder_path=row["folder_path"],
-        thumbnail_url=f"/api/photos/{row['id']}/thumbnail",
-        full_image_url=f"/api/photos/{row['id']}/image",
-        status=row["status"],
-        blur_score=row["blur_score"],
-        duplicate_group_id=row["duplicate_group_id"],
-        composition_score=row["composition_score"],
-        created_at=row["created_at"],
-        updated_at=row["updated_at"],
-    )
+    return _row_to_photo(row)
+
+
+@router.patch("/{photo_id}/featured", response_model=PhotoOut)
+async def update_featured(photo_id: str, body: PhotoFeaturedUpdate):
+    """Toggle a single photo's featured flag."""
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE photos SET featured = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (int(body.featured), photo_id),
+        )
+        row = conn.execute("SELECT * FROM photos WHERE id = ?", (photo_id,)).fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    return _row_to_photo(row)
 
 
 @router.patch("/batch/status")
@@ -170,6 +178,38 @@ async def batch_update_status(body: BatchStatusUpdate):
                 (body.status.value, pid),
             )
     return {"updated": len(body.photo_ids), "status": body.status.value}
+
+
+@router.post("/batch/copy-featured")
+async def copy_featured(req: LoadFolderRequest):
+    """Copy all featured photos to a '精選' subfolder."""
+    folder = Path(req.folder_path)
+    if not folder.is_dir():
+        raise HTTPException(status_code=400, detail=f"Folder not found: {folder}")
+
+    dest = folder / "精選"
+    dest.mkdir(exist_ok=True)
+
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT full_image_path, name FROM photos WHERE folder_path = ? AND featured = 1",
+            (req.folder_path,),
+        ).fetchall()
+
+    copied = 0
+    errors = []
+    for r in rows:
+        try:
+            src = Path(r["full_image_path"])
+            if src.exists():
+                shutil.copy2(str(src), str(dest / r["name"]))
+                copied += 1
+            else:
+                errors.append({"name": r["name"], "error": "Source file not found"})
+        except Exception as e:
+            errors.append({"name": r["name"], "error": str(e)})
+
+    return {"copied": copied, "folder": str(dest), "errors": errors}
 
 
 @router.delete("/batch/delete-marked")
