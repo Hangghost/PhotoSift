@@ -1,0 +1,29 @@
+# Development overrides — automatically loaded by docker-compose
+# Mounts source code for hot-reload; overrides CMD for dev servers.
+services:
+  backend:
+    build:
+      context: ./backend
+    volumes:
+      - photosift-data:/data
+      - ${PHOTOS_DIR:-./_photos}:/photos:ro
+      - ./backend/app:/app/app  # hot-reload source
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      - DEBUG=true
+
+  frontend:
+    build:
+      context: ./frontend
+      target: build  # stop at build stage (has node)
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src    # hot-reload source
+      - ./frontend/index.html:/app/index.html
+    environment:
+      - API_URL=http://backend:8000
+    command: npm run dev -- --host 0.0.0.0
+    depends_on:
+      backend:
+        condition: service_healthy

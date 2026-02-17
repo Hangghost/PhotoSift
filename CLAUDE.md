@@ -8,28 +8,46 @@ PhotoSift is a local web app for batch photo review: load a folder of photos, br
 
 ## Commands
 
-### Backend (Python FastAPI)
+### Quick start (Docker)
+```bash
+make dev                 # Start full dev environment (hot-reload)
+make stop                # Stop all containers
+make prod                # Start production environment
+```
+
+### Backend (Python FastAPI, via uv)
 ```bash
 cd backend
-source venv/bin/activate
-uvicorn app.main:app --reload --port 8000
+uv sync                  # Install dependencies (creates .venv automatically)
+uv run uvicorn app.main:app --reload --port 8000
 ```
 
 ### Frontend (React + Vite)
 ```bash
 cd frontend
-npm run dev          # dev server on :5173, proxies /api to :8000
-npm run build        # production build to dist/
-npx tsc --noEmit     # type-check without emitting
+npm install
+npm run dev              # dev server on :5173, proxies /api to :8000
+npm run build            # production build to dist/
+npx tsc --noEmit         # type-check without emitting
 ```
 
 ### First-time setup
 ```bash
-# Backend
-cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+# Option A: Docker (recommended)
+make install             # installs backend (uv sync) + frontend (npm install)
+make dev                 # starts everything
 
-# Frontend
+# Option B: Local
+cd backend && uv sync
 cd frontend && npm install
+```
+
+### Code quality
+```bash
+make lint                # ESLint (frontend) + Ruff (backend)
+make typecheck           # TypeScript type checking
+make format              # Ruff format + fix (backend)
+make check               # lint + typecheck
 ```
 
 ## Architecture
@@ -45,7 +63,7 @@ Browser (React, :5173)  ──/api──▶  FastAPI (:8000)  ──▶  SQLite 
   - `components/` — Toolbar (folder input + stats), PhotoGrid, PhotoViewer (lightbox), HelpOverlay
 
 - **Backend** (`backend/app/`): FastAPI + SQLite (via raw sqlite3, no ORM)
-  - `main.py` — app entry, CORS, router registration
+  - `main.py` — app entry, CORS, lifespan handler, router registration
   - `config.py` — pydantic-settings config (paths, ports, env vars)
   - `database.py` — SQLite schema init + connection context manager (WAL mode)
   - `routers/photos.py` — all photo endpoints: load-folder, list, status update, batch ops, image serving
@@ -68,6 +86,13 @@ Browser (React, :5173)  ──/api──▶  FastAPI (:8000)  ──▶  SQLite 
 4. Status changes go via PATCH to backend → persisted in SQLite
 5. "Delete Marked" removes files from disk and DB
 
+## Docker
+
+- `docker-compose.yml` — production config (Nginx serves frontend, proxies /api to backend)
+- `docker-compose.override.yml` — dev overrides (hot-reload, source mounts)
+- `.env.docker` — container environment variables
+- Set `PHOTOS_DIR` to mount your photo folder: `PHOTOS_DIR=~/Pictures make dev`
+
 ## Conventions
 
 - Photo IDs are SHA-256 hashes of `folder/filename` (first 16 hex chars)
@@ -75,6 +100,8 @@ Browser (React, :5173)  ──/api──▶  FastAPI (:8000)  ──▶  SQLite 
 - Frontend Vite proxy forwards `/api/*` to backend at `:8000`
 - SQLite DB defaults to `~/.photo-workflow/data.db`
 - Supported image extensions: jpg, jpeg, png, heic, heif, webp, bmp, tiff, tif
+- Backend uses **uv** for dependency management (`pyproject.toml` + `uv.lock`)
+- Backend linting via **Ruff** (run with `make lint` or `uv run ruff check .`)
 
 ## Planned phases (from photo-workflow-planner.md)
 

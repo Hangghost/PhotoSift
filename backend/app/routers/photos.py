@@ -1,19 +1,15 @@
 import hashlib
-import os
-import shutil
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
-from app.config import settings
 from app.database import get_connection
 from app.models.schemas import (
     BatchStatusUpdate,
     LoadFolderRequest,
     PhotoOut,
-    PhotoStatus,
     PhotoStatusUpdate,
     SessionOut,
 )
@@ -45,7 +41,8 @@ async def load_folder(req: LoadFolderRequest):
     with get_connection() as conn:
         # Create session
         conn.execute(
-            "INSERT INTO sessions (id, folder_path, total_photos, status) VALUES (?, ?, ?, 'active')",
+            "INSERT INTO sessions (id, folder_path, total_photos, status) "
+            "VALUES (?, ?, ?, 'active')",
             (session_id, str(folder), len(photos)),
         )
         # Upsert photos
@@ -109,7 +106,9 @@ async def list_photos(folder_path: str | None = None, status: str | None = None)
 async def get_image(photo_id: str):
     """Serve the full-size image."""
     with get_connection() as conn:
-        row = conn.execute("SELECT full_image_path FROM photos WHERE id = ?", (photo_id,)).fetchone()
+        row = conn.execute(
+            "SELECT full_image_path FROM photos WHERE id = ?", (photo_id,)
+        ).fetchone()
     if not row or not row["full_image_path"]:
         raise HTTPException(status_code=404, detail="Photo not found")
 

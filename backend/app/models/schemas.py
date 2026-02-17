@@ -1,10 +1,10 @@
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel
 
 
-class PhotoStatus(str, Enum):
+class PhotoStatus(StrEnum):
     pending = "pending"
     keep = "keep"
     delete = "delete"

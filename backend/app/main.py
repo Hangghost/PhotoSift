@@ -1,3 +1,7 @@
+import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -5,7 +9,25 @@ from app.config import settings
 from app.database import init_db
 from app.routers import photos
 
-app = FastAPI(title=settings.app_name)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    # Startup
+    settings.ensure_dirs()
+    db_dir = settings.database_path.parent
+    if not db_dir.exists():
+        logger.error("Database directory %s does not exist and could not be created", db_dir)
+        raise RuntimeError(f"Database directory not available: {db_dir}")
+    init_db()
+    logger.info("PhotoSift started — DB at %s", settings.database_path)
+    yield
+    # Shutdown
+    logger.info("PhotoSift shutting down")
+
+
+app = FastAPI(title=settings.app_name, lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,11 +38,6 @@ app.add_middleware(
 )
 
 app.include_router(photos.router)
-
-
-@app.on_event("startup")
-async def startup():
-    init_db()
 
 
 @app.get("/api/health")
