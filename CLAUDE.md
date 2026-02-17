@@ -57,10 +57,10 @@ Browser (React, :5173)  ──/api──▶  FastAPI (:8000)  ──▶  SQLite 
 ```
 
 - **Frontend** (`frontend/src/`): React + TypeScript + Tailwind CSS + Zustand
-  - `store/photoStore.ts` — central state: photo list, selection, status marking
-  - `hooks/useKeyboard.ts` — keyboard shortcut handler (arrows, D/K/U, Space, Shift+D)
+  - `store/photoStore.ts` — central state: photo list, selection, status marking, featured toggle
+  - `hooks/useKeyboard.ts` — keyboard shortcut handler (arrows, D/K/U/F, Space, Shift+D)
   - `services/api.ts` — typed fetch wrapper for all backend endpoints
-  - `components/` — Toolbar (folder input + stats), PhotoGrid, PhotoViewer (lightbox), HelpOverlay
+  - `components/` — Toolbar (folder input + stats + featured button), PhotoGrid (status + featured badges), PhotoViewer (lightbox), HelpOverlay
 
 - **Backend** (`backend/app/`): FastAPI + SQLite (via raw sqlite3, no ORM)
   - `main.py` — app entry, CORS, lifespan handler, router registration
@@ -76,15 +76,18 @@ Browser (React, :5173)  ──/api──▶  FastAPI (:8000)  ──▶  SQLite 
 | GET | `/api/photos` | List photos (filterable by folder, status) |
 | GET | `/api/photos/{id}/image` | Serve full-size image file |
 | PATCH | `/api/photos/{id}/status` | Set single photo status (pending/keep/delete) |
+| PATCH | `/api/photos/{id}/featured` | Toggle single photo featured flag |
 | PATCH | `/api/photos/batch/status` | Batch status update |
+| POST | `/api/photos/batch/copy-featured` | Copy all featured photos to "精選/" subfolder |
 | DELETE | `/api/photos/batch/delete-marked` | Delete files marked "delete" from disk + DB |
 
 ### Data flow
 1. User enters a local folder path → `POST /load-folder` scans it, writes to SQLite
 2. Frontend fetches photo list, displays grid with thumbnails served from backend
-3. User navigates with arrow keys, marks with D/K/U
-4. Status changes go via PATCH to backend → persisted in SQLite
+3. User navigates with arrow keys, marks with D/K/U, toggles featured with F
+4. Status/featured changes go via PATCH to backend → persisted in SQLite
 5. "Delete Marked" removes files from disk and DB
+6. "Copy Featured" copies featured photos to "精選/" subfolder
 
 ## Docker
 

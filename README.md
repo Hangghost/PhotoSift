@@ -54,6 +54,7 @@ Open http://localhost:3002 (dev) or http://localhost:8888 (prod), enter a local 
 | `D` | Mark for deletion |
 | `K` | Mark as keep |
 | `U` | Undo mark (set pending) |
+| `F` | Toggle featured (★) |
 | `Shift+D` | Delete all marked photos from disk |
 | `?` | Show keyboard shortcuts help |
 
@@ -211,11 +212,21 @@ DEBUG=false
 
 For local development, copy `backend/.env.example` to `backend/.env`.
 
+## Features
+
+- ✅ 批次瀏覽照片網格 (4 欄)
+- ✅ 鍵盤快速導航 (方向鍵、Space 全螢幕)
+- ✅ 快速標記狀態 (K 保留 / D 刪除 / U 取消)
+- ✅ **精選功能 (F 鍵切換，★ 標記，批次複製到「精選/」資料夾)**
+- ✅ 批次刪除標記照片 (Shift+D)
+- ✅ Docker 容器化部署 (開發/生產環境分離)
+- ✅ 本機照片路徑支援 (支援 `~/` 展開)
+
 ## Roadmap
 
 詳細規劃請見 [PLAN.md](PLAN.md)
 
-- **Phase 1** (✅ 已完成): Batch browsing, keyboard navigation, mark & delete, Docker deployment
+- **Phase 1** (✅ 已完成): Batch browsing, keyboard navigation, mark & delete, featured photos, Docker deployment
 - **Phase 2** (🚧 計劃中): AI pre-filtering (blur detection, duplicate detection, composition scoring)
 - **Phase 3** (未來): Google Drive sync, Google Photos / Facebook upload, 遠端部署
 

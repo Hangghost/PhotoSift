@@ -2,6 +2,30 @@
 
 All notable changes to PhotoSift will be documented in this file.
 
+## [0.4.0] - 2026-02-17
+
+### Added
+- **精選照片功能 (Featured Photos)**:
+  - 新增 `featured` 布林欄位到 photos 資料表（含既有資料庫自動遷移）
+  - `F` 鍵快速切換照片精選狀態
+  - PhotoGrid 顯示金色 ★ badge 標示精選照片（與 keep/delete badge 並存）
+  - Toolbar 新增「Featured: N」統計數字
+  - 「Copy Featured」按鈕 - 將所有精選照片複製到「精選/」子資料夾
+  - Help overlay 新增 F 鍵說明
+- **Backend API**:
+  - `PATCH /api/photos/{id}/featured` - 切換單張照片精選狀態
+  - `POST /api/photos/batch/copy-featured` - 批次複製精選照片到子資料夾
+  - 新增 `PhotoFeaturedUpdate` Pydantic schema
+  - 重構 `_row_to_photo()` 輔助函數統一 PhotoOut 建構邏輯
+- **Frontend Store & API**:
+  - `toggleFeatured()` action - 切換當前照片精選狀態
+  - `copyFeatured()` action - 呼叫批次複製 API
+  - `Photo` interface 新增 `featured: boolean` 欄位
+
+### Changed
+- Database schema: `photos` 資料表新增 `featured INTEGER DEFAULT 0`
+- 前端 Toolbar 當有精選照片時顯示黃色「Copy Featured」按鈕
+
 ## [0.3.0] - 2026-02-17
 
 ### Added
