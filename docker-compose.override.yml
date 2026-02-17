@@ -6,18 +6,19 @@ services:
       context: ./backend
     volumes:
       - photosift-data:/data
-      - ${PHOTOS_DIR:-./_photos}:/photos:ro
+      - ${HOME}:${HOME}  # Mount entire home directory (rw for delete operation)
       - ./backend/app:/app/app  # hot-reload source
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     environment:
       - DEBUG=true
+      - HOME=${HOME}  # Pass HOME env var for expanduser()
 
   frontend:
     build:
       context: ./frontend
       target: build  # stop at build stage (has node)
     ports:
-      - "5173:5173"
+      - "${FRONTEND_DEV_PORT:-3002}:5173"
     volumes:
       - ./frontend/src:/app/src    # hot-reload source
       - ./frontend/index.html:/app/index.html

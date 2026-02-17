@@ -7,7 +7,8 @@
        prod
 
 COMPOSE := docker compose
-PHOTOS_DIR ?= $(HOME)/Pictures
+COMPOSE_DEV := docker compose -p photosift-dev
+COMPOSE_PROD := docker compose -p photosift-prod -f docker-compose.yml
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -16,33 +17,72 @@ help: ## Show this help
 # ─── Development ──────────────────────────────────────────────
 
 dev: ## Start full dev environment (with hot-reload)
-	PHOTOS_DIR=$(PHOTOS_DIR) $(COMPOSE) up --build
+	$(COMPOSE_DEV) up --build
 
 dev-backend: ## Start only the backend container
-	PHOTOS_DIR=$(PHOTOS_DIR) $(COMPOSE) up --build backend
+	$(COMPOSE_DEV) up --build backend
 
 dev-frontend: ## Start only the frontend container
-	PHOTOS_DIR=$(PHOTOS_DIR) $(COMPOSE) up --build frontend
+	$(COMPOSE_DEV) up --build frontend
 
-stop: ## Stop all containers
-	$(COMPOSE) down
+pause-dev: ## Pause development containers (keep containers, stop running)
+	$(COMPOSE_DEV) stop
 
-restart: ## Restart all containers
-	$(COMPOSE) restart
+pause-prod: ## Pause production containers (keep containers, stop running)
+	$(COMPOSE_PROD) stop
+
+resume-dev: ## Resume paused development containers
+	$(COMPOSE_DEV) start
+
+resume-prod: ## Resume paused production containers
+	$(COMPOSE_PROD) start
+
+stop-dev: ## Stop and remove development containers
+	$(COMPOSE_DEV) down
+
+stop-prod: ## Stop and remove production containers
+	$(COMPOSE_PROD) down
+
+stop: ## Stop and remove all containers (both dev and prod)
+	$(COMPOSE_DEV) down
+	$(COMPOSE_PROD) down
+
+restart-dev: ## Restart running development containers
+	$(COMPOSE_DEV) restart
+
+restart-prod: ## Restart running production containers
+	$(COMPOSE_PROD) restart
 
 # ─── Production ───────────────────────────────────────────────
 
 prod: ## Start production environment (no override, Nginx serves frontend)
-	PHOTOS_DIR=$(PHOTOS_DIR) $(COMPOSE) -f docker-compose.yml up --build -d
+	$(COMPOSE_PROD) up --build -d
+
+deploy: ## Rebuild and restart production environment (for updates)
+	@echo "🔄 Stopping existing containers..."
+	$(COMPOSE_PROD) down
+	@echo "🏗️  Building production images..."
+	$(COMPOSE_PROD) build --no-cache
+	@echo "🚀 Starting production environment..."
+	$(COMPOSE_PROD) up -d
+	@echo ""
+	@echo "✅ PhotoSift deployed successfully!"
+	@echo "   Frontend: http://localhost:8888"
+	@echo "   Backend:  http://localhost:8000"
+	@echo ""
+	@echo "📝 Useful commands:"
+	@echo "   make logs-prod   - View production logs"
+	@echo "   make status      - Check container status"
+	@echo "   make stop-prod   - Stop production containers"
 
 build: ## Build all production images
-	$(COMPOSE) -f docker-compose.yml build
+	$(COMPOSE_PROD) build
 
 build-backend: ## Build only the backend image
-	$(COMPOSE) -f docker-compose.yml build backend
+	$(COMPOSE_PROD) build backend
 
 build-frontend: ## Build only the frontend image
-	$(COMPOSE) -f docker-compose.yml build frontend
+	$(COMPOSE_PROD) build frontend
 
 # ─── Code Quality ─────────────────────────────────────────────
 
@@ -82,18 +122,50 @@ clean: ## Remove build artifacts and caches
 	find backend -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
 clean-all: clean ## Clean + remove Docker images and volumes
-	$(COMPOSE) down --rmi all --volumes --remove-orphans
+	$(COMPOSE_DEV) down --rmi all --volumes --remove-orphans
+	$(COMPOSE_PROD) down --rmi all --volumes --remove-orphans
 
 # ─── Utilities ────────────────────────────────────────────────
 
-logs: ## Show container logs (follow)
-	$(COMPOSE) logs -f
+status: ## Show container status and health
+	@echo "📊 Development Containers:"
+	@$(COMPOSE_DEV) ps 2>/dev/null || echo "  (none running)"
+	@echo ""
+	@echo "📊 Production Containers:"
+	@$(COMPOSE_PROD) ps 2>/dev/null || echo "  (none running)"
+	@echo ""
+	@echo "🏥 Health Check:"
+	@echo -n "  Backend:  "
+	@curl -sf http://localhost:8000/api/health > /dev/null 2>&1 && echo "✅ Healthy" || echo "❌ Unreachable"
+	@echo -n "  Dev Frontend (3002):  "
+	@curl -sf http://localhost:3002 > /dev/null 2>&1 && echo "✅ Reachable" || echo "❌ Unreachable"
+	@echo -n "  Prod Frontend (8888): "
+	@curl -sf http://localhost:8888 > /dev/null 2>&1 && echo "✅ Reachable" || echo "❌ Unreachable"
+	@echo ""
+	@echo "🔗 Access URLs:"
+	@echo "  Dev Frontend:  http://localhost:3002"
+	@echo "  Prod Frontend: http://localhost:8888"
+	@echo "  Backend API:   http://localhost:8000"
 
-shell-backend: ## Open a shell in the backend container
-	$(COMPOSE) exec backend bash
+logs: logs-dev ## Show development container logs (alias)
 
-shell-frontend: ## Open a shell in the frontend container
-	$(COMPOSE) exec frontend sh
+logs-dev: ## Show development container logs (follow)
+	$(COMPOSE_DEV) logs -f
+
+logs-prod: ## Show production container logs (follow)
+	$(COMPOSE_PROD) logs -f
+
+shell-backend: ## Open a shell in the dev backend container
+	$(COMPOSE_DEV) exec backend bash
+
+shell-frontend: ## Open a shell in the dev frontend container
+	$(COMPOSE_DEV) exec frontend sh
+
+shell-backend-prod: ## Open a shell in the prod backend container
+	$(COMPOSE_PROD) exec backend bash
+
+shell-frontend-prod: ## Open a shell in the prod frontend container
+	$(COMPOSE_PROD) exec frontend sh
 
 health: ## Check backend health endpoint
 	@curl -sf http://localhost:8000/api/health | python3 -m json.tool || echo "Backend is not reachable"

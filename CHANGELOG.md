@@ -2,6 +2,39 @@
 
 All notable changes to PhotoSift will be documented in this file.
 
+## [0.3.0] - 2026-02-17
+
+### Added
+- **獨立容器管理**: Dev 和 Prod 環境完全獨立，可同時運行
+  - 使用不同的 Docker Compose project name (`photosift-dev`, `photosift-prod`)
+  - 新增 `make pause-dev/pause-prod` - 暫停容器但保留狀態
+  - 新增 `make resume-dev/resume-prod` - 快速恢復暫停的容器
+  - 新增 `make stop-dev/stop-prod` - 獨立停止並刪除容器
+  - 新增 `make restart-dev/restart-prod` - 獨立重啟容器
+  - 新增 `make logs-dev/logs-prod` - 分別查看日誌
+- **容器狀態管理**: 新增 `make status` 顯示 dev/prod 容器狀態與健康檢查
+- **部署指令**: 新增 `make deploy` 完整重建並部署 production 環境
+- **專案規劃文件**: 新增 `PLAN.md` 記錄已完成功能與未來規劃
+  - Phase 2: AI 預篩選（模糊偵測、重複照片、構圖評分）
+  - Phase 3: 雲端整合（Google Drive、Photos、Facebook）
+  - 技術優化待排程（縮圖快取、測試、CI/CD 等）
+  - 遠端部署規劃（認證、多用戶、監控等）
+
+### Changed
+- **掛載整個 HOME 目錄**: 支援在前端直接輸入任意本機路徑
+  - 不再需要 `PHOTOS_DIR` 環境變數
+  - 可輸入 `~/Downloads/photos` 或完整路徑
+  - 容器內自動設定 HOME 環境變數支援 `expanduser()`
+- **Port 調整**:
+  - Dev frontend: 5173 → 3002（避免常見 port 衝突）
+  - Prod frontend: 8080 → 8888
+- **前端提示更新**: Placeholder 提示使用者輸入本機路徑
+- **容器 expanduser() 錯誤處理**: 加入 try-catch 避免容器內無 HOME 變數時崩潰
+
+### Fixed
+- 修復容器內無法使用 `~` 展開路徑的問題
+- 修復 port 衝突問題（8080 被佔用）
+
 ## [0.2.0] - 2026-02-17
 
 ### Added

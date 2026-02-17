@@ -36,7 +36,7 @@ export function Toolbar() {
           value={inputPath}
           onChange={(e) => setInputPath(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
-          placeholder="Enter folder path, e.g. ~/Pictures/trip"
+          placeholder="Enter folder path, e.g. ~/Pictures/trip or ~/Downloads/photos"
           className="flex-1 bg-gray-800 text-white px-3 py-1.5 rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
         />
 

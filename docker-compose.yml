@@ -5,9 +5,11 @@ services:
       - "8000:8000"
     env_file:
       - .env.docker
+    environment:
+      - HOME=${HOME}  # Pass HOME env var for expanduser()
     volumes:
       - photosift-data:/data
-      - ${PHOTOS_DIR:-./_photos}:/photos:ro
+      - ${HOME}:${HOME}  # Mount entire home directory (rw for delete operation)
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
       interval: 10s
@@ -18,7 +20,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "8080:80"
+      - "${FRONTEND_PORT:-8888}:80"
     depends_on:
       backend:
         condition: service_healthy

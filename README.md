@@ -17,11 +17,15 @@ Local web app for batch photo review — browse a folder of photos in a grid, ma
 make install
 
 # Start dev environment (hot-reload enabled)
-PHOTOS_DIR=~/Pictures make dev
+make dev
 
 # Open browser
-open http://localhost:5173
+open http://localhost:3002
 ```
+
+在瀏覽器輸入框中輸入本機照片目錄路徑，例如：
+- `~/Downloads/photos`
+- `/Users/yourname/Pictures/trip`
 
 #### Option B: Local Development
 
@@ -37,7 +41,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173, enter a local folder path (e.g. `~/Pictures/trip`), click **Load**.
+Open http://localhost:3002 (dev) or http://localhost:8888 (prod), enter a local folder path (e.g. `~/Pictures/trip`), click **Load**.
 
 ## Keyboard Shortcuts
 
@@ -55,17 +59,47 @@ Open http://localhost:5173, enter a local folder path (e.g. `~/Pictures/trip`), 
 
 ## Available Commands
 
+### 開發與生產
 ```bash
-make dev              # Start dev environment (hot-reload)
-make prod             # Start production environment
-make stop             # Stop all containers
-make build            # Build production images
+make dev              # 啟動開發環境 (hot-reload)
+make prod             # 啟動生產環境 (背景執行)
+make deploy           # 完整重建並部署 production
+```
+
+### 容器管理
+```bash
+make pause-dev        # 暫停 dev 容器 (保留狀態)
+make resume-dev       # 恢復 dev 容器
+make stop-dev         # 停止並刪除 dev 容器
+make restart-dev      # 重啟 dev 容器
+
+make pause-prod       # 暫停 prod 容器
+make resume-prod      # 恢復 prod 容器
+make stop-prod        # 停止並刪除 prod 容器
+make restart-prod     # 重啟 prod 容器
+
+make stop             # 停止所有容器 (dev + prod)
+```
+
+### 監控與除錯
+```bash
+make status           # 查看容器狀態與健康檢查
+make logs-dev         # 查看 dev 日誌
+make logs-prod        # 查看 prod 日誌
+make health           # 檢查 backend 健康狀態
+```
+
+### 程式碼品質
+```bash
 make lint             # Run linters (ESLint + Ruff)
 make typecheck        # TypeScript type checking
 make format           # Format backend code (Ruff)
 make check            # Run all checks (lint + typecheck)
-make logs             # Show container logs
-make health           # Check backend health
+```
+
+### 其他
+```bash
+make build            # Build production images
 make clean            # Remove build artifacts
 make help             # Show all available commands
 ```
@@ -131,20 +165,38 @@ The project uses `docker-compose.override.yml` for development:
 ### Production Deployment
 
 ```bash
-# Build images
-make build
+# 完整重建並部署
+make deploy
 
-# Start production mode
-PHOTOS_DIR=/path/to/photos make prod
+# 或手動分步驟
+make build          # Build images
+make prod           # Start production mode
 
 # Access via Nginx
-open http://localhost:8080
+open http://localhost:8888
 ```
 
 In production mode:
 - Frontend served by Nginx (static build)
 - Nginx reverse proxies `/api` to backend
 - Optimized images (multi-stage builds)
+- 背景執行，可關閉 terminal
+
+### 容器管理最佳實踐
+
+```bash
+# 暫時停止（快速恢復，節省資源）
+make pause-dev      # 或 make pause-prod
+
+# 稍後恢復
+make resume-dev     # 或 make resume-prod
+
+# 完全停止（需要重建）
+make stop-dev       # 或 make stop-prod
+
+# 查看狀態
+make status
+```
 
 ## Environment Variables
 
@@ -153,7 +205,7 @@ See `.env.docker` for container environment configuration:
 ```bash
 DATABASE_PATH=/data/data.db
 CACHE_DIR=/data/cache
-FRONTEND_URL=http://localhost:8080
+FRONTEND_URL=http://localhost:8888
 DEBUG=false
 ```
 
@@ -161,9 +213,11 @@ For local development, copy `backend/.env.example` to `backend/.env`.
 
 ## Roadmap
 
-- **Phase 1** (current): Batch browsing, keyboard navigation, mark & delete
-- **Phase 2**: AI pre-filtering (blur detection, duplicate detection, composition scoring)
-- **Phase 3**: Google Drive sync, Google Photos / Facebook upload
+詳細規劃請見 [PLAN.md](PLAN.md)
+
+- **Phase 1** (✅ 已完成): Batch browsing, keyboard navigation, mark & delete, Docker deployment
+- **Phase 2** (🚧 計劃中): AI pre-filtering (blur detection, duplicate detection, composition scoring)
+- **Phase 3** (未來): Google Drive sync, Google Photos / Facebook upload, 遠端部署
 
 ## License
 

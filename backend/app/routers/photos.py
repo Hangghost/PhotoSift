@@ -26,7 +26,13 @@ def _photo_id(folder: str, filename: str) -> str:
 @router.post("/load-folder", response_model=SessionOut)
 async def load_folder(req: LoadFolderRequest):
     """Scan a local folder and load all photos into the database."""
-    folder = Path(req.folder_path).expanduser().resolve()
+    try:
+        folder = Path(req.folder_path).expanduser().resolve()
+    except RuntimeError:
+        # In Docker, expanduser() may fail if HOME is not set
+        # Fall back to using the path as-is
+        folder = Path(req.folder_path).resolve()
+
     if not folder.is_dir():
         raise HTTPException(status_code=400, detail=f"Folder not found: {folder}")
 
